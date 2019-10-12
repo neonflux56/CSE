@@ -152,3 +152,12 @@ plt.title("Error as training dataset proportion increases")
 plt.plot(factor,MSEtrain,color = "blue", label = "MSE train")
 plt.plot(factor,MSEtest,color = "red",label = "MSE test")
 plt.legend()
+
+#Solution 7 - Yes the size of the training dataset has a significant effect on the test error.
+# In this instance since only a single parameter is considered to predict the rating, the results cannot be considered to be the most accurate.
+#The test error increases drastically as the training data proportion approaches 95%, this is because training on large data results in a generalised theta coefficient values
+#and when applied on the small test dataset, it cannot predict the rating accurately increasing the error value.
+
+
+#Classification
+
