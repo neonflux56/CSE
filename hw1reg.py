@@ -2,7 +2,7 @@ import numpy as np
 import gzip
 import csv
 import matplotlib.pyplot as plt
-from sklearn.metrics import mean_squared_error
+import sklearn
 
 
 c = csv.reader(gzip.open("amazon_reviews_us_Gift_Card_v1_00.tsv.gz", 'r'), delimiter = '\t')
@@ -161,3 +161,91 @@ plt.legend()
 
 #Classification
 
+def feature3(datum):
+  feat = [1]
+  feat.append(datum['star_rating'])
+  feat.append(len(datum['review_body']))
+  return feat
+
+XC1 = [feature3(d) for d in dataset2]
+YC1 = []
+for datum in dataset2:
+  if datum['verified_purchase'] == "Y":
+      YC1.append(1)
+  else:
+      YC1.append(0)
+
+
+XCtrain = XC1[:int(0.9*len(dataset2))]
+YCtrain = YC1[:int(0.9*len(dataset2))]
+
+XCtest = XC1[int(0.9*len(dataset2)):]
+YCtest = YC1[int(0.9*len(dataset2)):]
+
+len(XC1), len(XCtrain), len(XCtest)
+
+model = linear_model.LogisticRegression()
+model.fit(XCtrain, YCtrain)
+
+predtrain = model.predict(XCtrain)
+predtest = model.predict(XCtest)
+
+correctpredtrain = predtrain == YCtrain
+correctpredtest = predtest == YCtest
+
+#Train accuracy and Test accuracy (Classification accuracy)
+sum(correctpredtrain) / len(correctpredtrain)
+sum(correctpredtest) / len(correctpredtest)
+#Proportion of labels that are positive and Proportion of predictions that are positive
+sum(d['verified_purchase'] == "Y" for d in dataset2)/len(dataset2)
+(sum(correctpredtest)+sum(correctpredtrain))/len(dataset2)
+
+# Designed feature vector for more accuracy
+#Clearly as the above solution suggests there is a class imbalance in the dataset. We need to decide a more effective parameter to model the feature vector.
+
+def classaccuracy():
+    def feature4(datum):
+        feat = [1]
+        try:
+            feat.append(datum['star_rating'])
+            if (time.mktime(time.strptime(datum['review_date'], "%Y-%m-%d"))) < 1169370800.00:
+                feat.append(0)
+            elif (time.mktime(time.strptime(datum['review_date'], "%Y-%m-%d"))) < 1269370800.00:
+                feat.append(1)
+            else:
+                feat.append(2)
+        except KeyError:
+            feat.append(0)
+
+        return feat
+
+    XC2 = [feature4(d) for d in dataset]
+
+    YC2 = []
+    for datum in dataset:
+        if datum['verified_purchase'] == "Y":
+            YC2.append(1)
+        else:
+            YC2.append(0)
+
+
+    XC2train = XC2[:int(0.9*len(dataset))]
+    YC2train = YC2[:int(0.9*len(dataset))]
+
+    XC2test = XC2[int(0.9*len(dataset)):]
+    YC2test = YC2[int(0.9*len(dataset)):]
+
+    len(XC2), len(XC2train), len(XC2test)
+
+    model2 = linear_model.LogisticRegression()
+    model2.fit(XC2train, YC2train)
+
+    pred2train = model2.predict(XC2train)
+    pred2test = model2.predict(XC2test)
+
+    correctpredtrain2 = pred2train == YC2train
+    correctpredtest2 = pred2test == YC2test
+
+    return sum(correctpredtrain2) / len(correctpredtrain2), sum(correctpredtest2) / len(correctpredtest2)
+
+print("Train and test accuracy of the model = \n"+ str(classaccuracy()))
