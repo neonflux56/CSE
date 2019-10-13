@@ -2,8 +2,8 @@ import numpy as np
 import gzip
 import csv
 import matplotlib.pyplot as plt
-import sklearn
-
+from sklearn import linear_model
+import time
 
 c = csv.reader(gzip.open("amazon_reviews_us_Gift_Card_v1_00.tsv.gz", 'r'), delimiter = '\t')
 dataset = []
@@ -184,7 +184,7 @@ YCtest = YC1[int(0.9*len(dataset2)):]
 
 len(XC1), len(XCtrain), len(XCtest)
 
-model = linear_model.LogisticRegression()
+model = sklearn.linear_model.LogisticRegression()
 model.fit(XCtrain, YCtrain)
 
 predtrain = model.predict(XCtrain)
@@ -194,46 +194,48 @@ correctpredtrain = predtrain == YCtrain
 correctpredtest = predtest == YCtest
 
 #Train accuracy and Test accuracy (Classification accuracy)
-sum(correctpredtrain) / len(correctpredtrain)
-sum(correctpredtest) / len(correctpredtest)
+sum(correctpredtrain)*1.0 / len(correctpredtrain)
+sum(correctpredtest)*1.0 / len(correctpredtest)
 #Proportion of labels that are positive and Proportion of predictions that are positive
-sum(d['verified_purchase'] == "Y" for d in dataset2)/len(dataset2)
-(sum(correctpredtest)+sum(correctpredtrain))/len(dataset2)
+sum(d['verified_purchase'] == "Y" for d in dataset2)*1.0/len(dataset2)
+(sum(correctpredtest)+sum(correctpredtrain))*1.0/len(dataset2)
 
 # Designed feature vector for more accuracy
 #Clearly as the above solution suggests there is a class imbalance in the dataset. We need to decide a more effective parameter to model the feature vector.
 
 def classaccuracy():
+    np.random.shuffle(dataset2)
     def feature4(datum):
         feat = [1]
         try:
-            feat.append(datum['star_rating'])
-            if (time.mktime(time.strptime(datum['review_date'], "%Y-%m-%d"))) < 1169370800.00:
-                feat.append(0)
-            elif (time.mktime(time.strptime(datum['review_date'], "%Y-%m-%d"))) < 1269370800.00:
+            a = ['discount','love','easy']
+            if any(x in datum['review_body'] for x in a):
                 feat.append(1)
             else:
-                feat.append(2)
+                feat.append(0)
+            if 1404284400 < (time.mktime(time.strptime(datum['review_date'], "%Y-%m-%d"))) < 1441004400.00:
+                feat.append(1)
+            else:
+                feat.append(0)
         except KeyError:
-            feat.append(0)
-
+           feat.append(0)
         return feat
 
-    XC2 = [feature4(d) for d in dataset]
+    XC2 = [feature4(d) for d in dataset2]
 
     YC2 = []
-    for datum in dataset:
+    for datum in dataset2:
         if datum['verified_purchase'] == "Y":
             YC2.append(1)
         else:
             YC2.append(0)
 
 
-    XC2train = XC2[:int(0.9*len(dataset))]
-    YC2train = YC2[:int(0.9*len(dataset))]
+    XC2train = XC2[:int(0.9*len(dataset2))]
+    YC2train = YC2[:int(0.9*len(dataset2))]
 
-    XC2test = XC2[int(0.9*len(dataset)):]
-    YC2test = YC2[int(0.9*len(dataset)):]
+    XC2test = XC2[int(0.9*len(dataset2)):]
+    YC2test = YC2[int(0.9*len(dataset2)):]
 
     len(XC2), len(XC2train), len(XC2test)
 
@@ -246,6 +248,7 @@ def classaccuracy():
     correctpredtrain2 = pred2train == YC2train
     correctpredtest2 = pred2test == YC2test
 
-    return sum(correctpredtrain2) / len(correctpredtrain2), sum(correctpredtest2) / len(correctpredtest2)
+    return sum(correctpredtrain2)*1.0 / len(correctpredtrain2),sum(correctpredtest2)*1.0 / len(correctpredtest2)
 
 print("Train and test accuracy of the model = \n"+ str(classaccuracy()))
+
