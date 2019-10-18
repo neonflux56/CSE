@@ -158,7 +158,6 @@ plt.legend()
 #The test error increases drastically as the training data proportion approaches 95%, this is because training on large data results in a generalised theta coefficient values
 #and when applied on the small test dataset, it cannot predict the rating accurately increasing the error value.
 
-
 #Classification
 
 def feature3(datum):
