@@ -23,9 +23,9 @@ for line in c:
 
 c1 = 0
 c2 = 0
-c3 =0
+c3 = 0
 c4 = 0
-c5= 0
+c5 = 0
 ratings = [1,2,3,4,5]
 for d in dataset:
     if d['star_rating']  == 1:
