@@ -198,5 +198,3 @@ plt.legend()
 
 # Question 4 Sample weights
 
-
-
