@@ -3,7 +3,6 @@ import numpy
 from sklearn import linear_model
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
-from collections import defaultdict
 
 
 #########################################
@@ -305,7 +304,7 @@ F10
 
 ######################################################################################################
 
-# Question 7
+# Dimensionality Reduction
 
 #Consider the 64 values in the dataset removing the 1 that we added earlier
 random.shuffle(dataset)
@@ -324,26 +323,27 @@ ytrain = y[:Ntrain]
 yvalid = y[Ntrain:NValid]
 ytest = y[NValid:]
 
+
 pca = PCA(n_components=64)
 pca.fit(Xtrain)
 
-#first PCA component
+#first PCA component Question 7
 pca.components_[0]
 
-#training a model
-
-Xpca_train = numpy.matmul(Xtrain, pca.components_.T)
-Xpca_valid = numpy.matmul(Xvalid, pca.components_.T)
-Xpca_test = numpy.matmul(Xtest, pca.components_.T)
+#training models using different reduced features Question 8
 
 n = numpy.arange(5, 35, 5).tolist()
 Bpca_val = []
 Bpca_test = []
 
 for i in n:
-    Xpca_train = [x[:60] for x in Xpca_train]
-    Xpca_valid = [x[:60] for x in Xpca_valid]
-    Xpca_test = [x[:60] for x in Xpca_test]
+    Xpca_train = numpy.matmul(Xtrain, pca.components_.T)
+    Xpca_valid = numpy.matmul(Xvalid, pca.components_.T)
+    Xpca_test = numpy.matmul(Xtest, pca.components_.T)
+
+    Xpca_train = [x[:i] for x in Xpca_train]
+    Xpca_valid = [x[:i] for x in Xpca_valid]
+    Xpca_test = [x[:i] for x in Xpca_test]
 
     mod = linear_model.LogisticRegression(C=1.0, class_weight='balanced')
     mod.fit(Xpca_train, ytrain)
@@ -372,5 +372,13 @@ for i in n:
     FN = sum(FN_)
     Bpca_test.append(1 - 0.5 * (TP * 1.0 / (TP + FN) + TN * 1.0 / (TN + FP)))
 
-    Bpca_val
-    Bpca_test
+plt.close()
+plt.xlabel(" N value (reduced number of features) ")
+plt.ylabel("BER")
+plt.title("PCA features - BER Relationship")
+
+plt.plot(n, Bpca_val, '--b', label='BERval')
+plt.plot(n, Bpca_test, '--r', label='BERtest')
+plt.legend()
+
+##################################################################
