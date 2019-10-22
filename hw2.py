@@ -2,6 +2,11 @@ import random
 import numpy
 from sklearn import linear_model
 import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+from collections import defaultdict
+
+
+#########################################
 
 # From https://archive.ics.uci.edu/ml/datasets/Polish+companies+bankruptcy+data
 f = open("5year.arff", 'r')
@@ -17,6 +22,12 @@ for l in f:
     values = [1] + [float(x) for x in l]
     values[-1] = values[-1] > 0 # Convert to bool
     dataset.append(values)
+
+
+
+#########################################
+
+#Question 1
 
 X = [d[:-1] for d in dataset]
 y = [d[-1] for d in dataset]
@@ -44,7 +55,7 @@ FN = sum(FN_)
 
 
 
-
+#########################################
 
 
 #Question 2
@@ -115,6 +126,10 @@ FP = sum(FP_)
 TN = sum(TN_)
 FN = sum(FN_)
 print("The accuracy and BER of test set is : " + str((TP + TN)*1.0 / (TP + FP + TN + FN)) + " , " + str(1 - 0.5 * (TP*1.0 / (TP + FN) + TN*1.0 / (TN + FP))))
+
+
+
+#########################################
 
 
 
@@ -196,5 +211,166 @@ plt.legend()
 #We go with the last c value since the difference between test and train ber is smallest, meaning the model is more generalised to unseen data.
 # That means the highest complexity model, ie, low regularization strength or lamda value
 
+
+
+
+#########################################
+
 # Question 4 Sample weights
 
+
+#shuffle
+
+X = [d[:-1] for d in dataset]
+y = [d[-1] for d in dataset]
+
+Xy = list(zip(X,y))
+random.shuffle(Xy)
+
+X = [d[0] for d in Xy]
+y = [d[1] for d in Xy]
+
+
+#split into train test
+N = len(Xy)
+Ntrain = N*0.8
+Ntrain = int(Ntrain)
+
+Xtrain = X[:Ntrain]
+Xtest = X[Ntrain:]
+
+ytrain = y[:Ntrain]
+ytest = y[Ntrain:]
+
+#equally weighted
+
+weights = [1.0] * len(ytrain)
+mod = linear_model.LogisticRegression(C=1, solver='lbfgs')
+mod.fit(Xtrain, ytrain, sample_weight=weights)
+pred = mod.predict(Xtest)
+
+TP_ = numpy.logical_and(pred, ytest)
+FP_ = numpy.logical_and(pred, numpy.logical_not(ytest))
+TN_ = numpy.logical_and(numpy.logical_not(pred), numpy.logical_not(ytest))
+FN_ = numpy.logical_and(numpy.logical_not(pred), ytest)
+TP = sum(TP_)
+FP = sum(FP_)
+TN = sum(TN_)
+FN = sum(FN_)
+
+Precision = TP *1.0 / (TP + FP)
+Precision
+Recall = TP*1.0 / (TP + FN)
+Recall
+F1 = 2 * (Precision*Recall) /(Precision + Recall)
+F1
+F10 = (101) * (Precision*Recall) /((100 * Precision) + Recall)
+F10
+
+
+#Better weights
+
+weights = []
+for i in ytrain:
+    if i == False:
+        weights.append(1)
+    else:
+        weights.append(18)
+mod = linear_model.LogisticRegression(C=1, solver='lbfgs')
+mod.fit(Xtrain, ytrain, sample_weight=weights)
+pred = mod.predict(Xtest)
+
+TP_ = numpy.logical_and(pred, ytest)
+FP_ = numpy.logical_and(pred, numpy.logical_not(ytest))
+TN_ = numpy.logical_and(numpy.logical_not(pred), numpy.logical_not(ytest))
+FN_ = numpy.logical_and(numpy.logical_not(pred), ytest)
+TP = sum(TP_)
+TP
+FP = sum(FP_)
+FP
+TN = sum(TN_)
+TN
+FN = sum(FN_)
+FN
+
+Precision = TP *1.0 / (TP + FP)
+Precision
+Recall = TP*1.0 / (TP + FN)
+Recall
+F1 = 2 * (Precision*Recall) /(Precision + Recall)
+F1
+F10 = (101) * (Precision*Recall) /((100 * Precision) + Recall)
+F10
+
+
+######################################################################################################
+
+# Question 7
+
+#Consider the 64 values in the dataset removing the 1 that we added earlier
+random.shuffle(dataset)
+X = [d[1:-1] for d in dataset]
+y = [d[-1] for d in dataset]
+N = len(X)
+Ntrain = N*0.5
+Ntrain = int(Ntrain)
+NValid = N*0.25
+NValid = Ntrain + NValid
+NValid = int(NValid)
+Xtrain = X[:Ntrain]
+Xvalid = X[Ntrain:NValid]
+Xtest = X[NValid:]
+ytrain = y[:Ntrain]
+yvalid = y[Ntrain:NValid]
+ytest = y[NValid:]
+
+pca = PCA(n_components=64)
+pca.fit(Xtrain)
+
+#first PCA component
+pca.components_[0]
+
+#training a model
+
+Xpca_train = numpy.matmul(Xtrain, pca.components_.T)
+Xpca_valid = numpy.matmul(Xvalid, pca.components_.T)
+Xpca_test = numpy.matmul(Xtest, pca.components_.T)
+
+n = numpy.arange(5, 35, 5).tolist()
+Bpca_val = []
+Bpca_test = []
+
+for i in n:
+    Xpca_train = [x[:60] for x in Xpca_train]
+    Xpca_valid = [x[:60] for x in Xpca_valid]
+    Xpca_test = [x[:60] for x in Xpca_test]
+
+    mod = linear_model.LogisticRegression(C=1.0, class_weight='balanced')
+    mod.fit(Xpca_train, ytrain)
+    predval = mod.predict(Xpca_valid)
+    pred = mod.predict(Xpca_test)
+
+    #  BER of validation set
+    TP_ = numpy.logical_and(predval, yvalid)
+    FP_ = numpy.logical_and(predval, numpy.logical_not(yvalid))
+    TN_ = numpy.logical_and(numpy.logical_not(predval), numpy.logical_not(yvalid))
+    FN_ = numpy.logical_and(numpy.logical_not(predval), yvalid)
+    TP = sum(TP_)
+    FP = sum(FP_)
+    TN = sum(TN_)
+    FN = sum(FN_)
+    Bpca_val.append(1 - 0.5 * (TP * 1.0 / (TP + FN) + TN * 1.0 / (TN + FP)))
+
+    #  BER of test set
+    TP_ = numpy.logical_and(pred, ytest)
+    FP_ = numpy.logical_and(pred, numpy.logical_not(ytest))
+    TN_ = numpy.logical_and(numpy.logical_not(pred), numpy.logical_not(ytest))
+    FN_ = numpy.logical_and(numpy.logical_not(pred), ytest)
+    TP = sum(TP_)
+    FP = sum(FP_)
+    TN = sum(TN_)
+    FN = sum(FN_)
+    Bpca_test.append(1 - 0.5 * (TP * 1.0 / (TP + FN) + TN * 1.0 / (TN + FP)))
+
+    Bpca_val
+    Bpca_test
