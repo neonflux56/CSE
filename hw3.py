@@ -76,7 +76,7 @@ for l in open("pairs_Read.txt"):
 predictions.close()
 
 
-# Setup train and validation and discrd the rating column
+# Setup train and validation and discard the rating column
 train = []
 for l in readCSV("train_Interactions.csv.gz"):
   train.append(l)
@@ -101,14 +101,19 @@ for user,book,_ in readCSV("train_Interactions.csv.gz"):
 
 def negbook(val):
   neg = []
-  b = random.choice(books)
-  if b not in ubdict[val]:
-    neg.append(val)
-    neg.append(b)
+  while len(neg)== 0:
+    b = random.choice(books)
+    if b not in ubdict[val]:
+      neg.append(val)
+      neg.append(b)
   return neg
 negvalid = [negbook(v[0]) for v in valid]
 new_valid = valid + negvalid
 random.shuffle(new_valid)
+
+
+
+
 
 
 #Create sets
@@ -125,7 +130,6 @@ random.shuffle(new_valid)
 #  num = len(s1.intersection(s2))
 #  denom = len(s1.union(s2))
 #  return num/denom
-#
 
 
 
