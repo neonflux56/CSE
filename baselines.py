@@ -45,6 +45,7 @@ predictions.close()
 bookCount = defaultdict(int)
 totalRead = 0
 
+
 for user,book,_ in readCSV("train_Interactions.csv.gz"):
   bookCount[book] += 1
   totalRead += 1
