@@ -97,8 +97,7 @@ print("MSE for validation set : " + str(msevalid))
 
 def get_key(val,dict):
     for x,y in dict.items():
-        if y == val:
-            print(x)
+        if y == val: print(x)
 
 
 print(get_key(max(beta_i.values()),beta_i))
@@ -107,7 +106,7 @@ print(get_key(min(beta_i.values()),beta_i))
 
 print(get_key(max(beta_u.values()),beta_u))
 
-print(get_key(min(beta_i.values()),beta_u))
+print(get_key(min(beta_u.values()),beta_u))
 
 
 
@@ -123,23 +122,23 @@ C = [0.01,0.1,1,10,100]
 msevalidc = []
 for c in C:
     alpha_ = globaltrainAverage
-    beta_u_val = [0]*len(booksperuser.keys())
-    beta_i_val = [0]*len(usersperbook.keys())
+    beta_u_val = [((sum(v) / len(v))) for v in userRatings.values()]
+    beta_i_val = [((sum(v) / len(v))) for v in bookRatings.values()]
     beta_u = dict(zip(booksperuser.keys(),beta_u_val))
     beta_i = dict(zip(usersperbook.keys(),beta_i_val))
     msetrain = []
     while (True):
         predtrain = []
-        for u, b, r in train[:100000]:
+        for u, b, r in train[:1000]:
             old_alpha_ = alpha_
             old_beta_u = beta_u[u]
             old_beta_i = beta_i[b]
-            alpha_ = sum([i - (old_beta_u + old_beta_i) for i in allRatings[:100000]]) / len(train)
+            alpha_ = sum([i - (old_beta_u + old_beta_i) for i in allRatings[:1000]]) / len(train)
             beta_u[u] = sum([i - (old_alpha_ + old_beta_i) for i in userRatings[u]]) / (c + len(userRatings[u]))
             beta_i[b] = sum([i - (old_alpha_ + old_beta_u) for i in bookRatings[b]]) / (c + len(bookRatings[b]))
             predtrain.append(alpha_ + beta_u[u] + beta_i[b])
-        msetrain.append(MSE(predtrain, allRatings[:100000]))
-        if (msetrain[-1] - msetrain[-2] < 0.05): break
+        msetrain.append(MSE(predtrain, allRatings[:1000]))
+        if (msetrain[-1] < 1.1): break
 
     predvalid = []
     for u, b, r in valid:
