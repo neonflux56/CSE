@@ -22,6 +22,8 @@ for l in readCSV("train_Interactions.csv.gz"):
   fulldata.append(l)
 valid = fulldata[190000:]
 train = fulldata[:190000]
+
+
 def getreq(val):
   n = []
   n.append(val[0])
@@ -33,10 +35,11 @@ train = [getreq(v) for v in train]
 
 
 #Generate new validation set with negative labels
-
+books = []
 usersperbook = defaultdict(list)
 booksperuser = defaultdict(list)
 for user,book,_ in readCSV("train_Interactions.csv.gz"):
+  books.append(book)
   usersperbook[book].append(user)
   booksperuser[user].append(book)
 
@@ -160,7 +163,7 @@ def maxsimilarityval(u,b) :
 
 
 
-Y = np.arange(0.01,0.011,0.0001)
+Y = np.arange(0.1,0.2,0.01)
 Accuracy1 = []
 for y in Y:
 
@@ -178,7 +181,6 @@ for y in Y:
 
 plt.plot(Y, Accuracy1)
 maxsimthreshold = Y[Accuracy1.index(max(Accuracy1))]
-
 print("Max similarity threshold: " + str(maxsimthreshold) + " gives Accuracy :" + str(max(Accuracy1)))
 
 
@@ -202,12 +204,14 @@ count = 0
 for ic, i in mostPopular:
   count += ic
   return2.add(i)
-  if count > (totalRead/thresholdval) : break
+  if count > (totalRead/1.4849999999999999) : break
 
+return2 = list(return2)
 pred2 = []
 for u,b,_ in new_valid:
-  if ((maxsimilarityval(u,b) > maxsimthreshold) and (b in return2)):
+  if ((maxsimilarityval(u,b) > 0.0067) and (b in return2)):
     pred2.append(1)
+    continue
   else:
     pred2.append(0)
 
@@ -218,8 +222,59 @@ for i, j in enumerate(actual):
 
 Accuracy2 = (sum(correct2) / len(correct2))
 
-print("positives :" + str(sum(pred2)))
-print("Using both Max similarity threshold: " + str(maxsimthreshold) +"\n and Popularity model threshold denom value: " + str(thresholdval) + "\n gives Accuracy :" + str(Accuracy2))
+print("positives :" + str(sum(pred2)) + "Accuracy : "+ str(sum(correct2) / len(correct2)))
+print("Using both Max similarity threshold: " + str(0.01) +"\n and Popularity model threshold denom value: " + str(1.3) + "\n gives Accuracy :" + str(Accuracy2))
+
+#####################################################################
+
+
+
+X = np.arange(1.4,1.5,0.01)
+Updated_Accuracy = []
+Y = np.arange(0.0068, 0.0069, 0.00001)
+
+for x in X:
+  for y in Y:
+
+    bookCount = defaultdict(int)
+    totalRead = 0
+
+    for user,book,_ in train:
+      bookCount[book] += 1
+      totalRead += 1
+
+    mostPopular = [(bookCount[x], x) for x in bookCount]
+    mostPopular.sort()
+    mostPopular.reverse()
+
+    return1 = set()
+    count = 0
+    for ic, i in mostPopular:
+      count += ic
+      return1.add(i)
+      if count > (totalRead/x) : break
+
+    pred = []
+    for u,b,_ in new_valid:
+      if (b in return1) and (maxsimilarityval(u,b) > y):
+        pred.append(1)
+      else:
+        pred.append(0)
+
+    correct = []
+    for i,j in enumerate(actual) :
+      correct.append( j == pred[i])
+    Updated_Accuracy.append(sum(correct)*1.0/len(correct) )
+
+    print("Accuracy : " + str(sum(correct)*1.0/len(correct)) + " x : " + str(x) + " y : " + str(y))
+
+max(Updated_Accuracy)
+
+
+
+
+
+
 
 
 #####################################################################
@@ -228,6 +283,7 @@ print("Using both Max similarity threshold: " + str(maxsimthreshold) +"\n and Po
 
 #The column name 'prediction' contains the predicted values for each user-book pair.
 
+return2 = list(return2)
 pred3 = []
 for l in open("pairs_Read.txt"):
   if l.startswith("userID"):
@@ -236,22 +292,39 @@ for l in open("pairs_Read.txt"):
       writer.writerow(["userID-bookID", "prediction"])
     continue
   u,b = l.strip().split('-')
+  if b not in books:
+    pred3.append(1)
+    with open('Read_Predictions_updated.csv', 'a') as csvFile:
+      writer = csv.writer(csvFile)
+      writer.writerow((u+"-"+b,1))
+    continue
   if b in Set_booksperuser[u]:
     pred3.append(1)
     with open('Read_Predictions_updated.csv', 'a') as csvFile:
       writer = csv.writer(csvFile)
       writer.writerow((u+"-"+b,1))
     continue
-  if ((maxsimilarityval(u,b) > maxsimthreshold) and (b in return2)):
+  if ((maxsimilarityval(u,b) > 0.006698) and (b in return2)):
     pred3.append(1)
     with open('Read_Predictions_updated.csv', 'a') as csvFile:
       writer = csv.writer(csvFile)
       writer.writerow((u+"-"+b,1))
+    continue
+  if b in return2[:int(len(return2)/4)]:
+    pred3.append(1)
+    with open('Read_Predictions_updated.csv', 'a') as csvFile:
+      writer = csv.writer(csvFile)
+      writer.writerow((u+"-"+b,1))
+    continue
   else:
     pred3.append(0)
     with open('Read_Predictions_updated.csv', 'a') as csvFile:
       writer = csv.writer(csvFile)
       writer.writerow((u+"-"+b,0))
+
+
+
+print(len(pred3))
 
 print(sum(pred3))
 

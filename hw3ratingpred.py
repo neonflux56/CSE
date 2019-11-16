@@ -1,12 +1,13 @@
 
+
+#OWN IMPLEMENTATION
+
 import gzip
 from collections import defaultdict
 import random
 import numpy as np
 import matplotlib.pyplot as plt
 import csv
-
-
 
 def readGz(path):
   for l in gzip.open(path, 'rt'):
@@ -44,6 +45,7 @@ for user,book,r in train:
   booksperuser[user].append(book)
 
 globaltrainAverage = sum(allRatings) / len(allRatings)
+
 userAverage = {}
 for u in userRatings:
   userAverage[u] = sum(userRatings[u]) / len(userRatings[u])
@@ -53,9 +55,9 @@ for u in userRatings:
 # Using gradient descent to rate predictions
 
 lamda = 1
-alpha_ = globaltrainAverage
-beta_u_val = [((sum(v)/len(v)) ) for v in userRatings.values()]
-beta_i_val = [((sum(v)/len(v)) ) for v in bookRatings.values()]
+alpha_ = 0
+beta_u_val = [0]*len(booksperuser) #[((sum(v)/len(v)) - alpha_) for v in userRatings.values()]
+beta_i_val = [0]*len(usersperbook)#[((sum(v)/len(v)) - alpha_) for v in bookRatings.values()]
 beta_u = dict(zip(booksperuser.keys(),beta_u_val))
 beta_i = dict(zip(usersperbook.keys(),beta_i_val))
 
@@ -63,19 +65,28 @@ beta_i = dict(zip(usersperbook.keys(),beta_i_val))
 def MSE(x,y):
     return sum( [(j - y[i])**2 for i,j in enumerate(x) ]) / len(x)
 
-msetrain = []
+msetrain = 0
 while(True) :
+    old_mse = msetrain
     predtrain = []
-    for u, b, r in train[:10000]:
+    for u, b, r in train:
         old_alpha_ = alpha_
         old_beta_u = beta_u[u]
         old_beta_i = beta_i[b]
-        alpha_ = sum([i - (old_beta_u + old_beta_i) for i in allRatings[:10000]]) / len(train)
+        alpha_ = sum([i - (old_beta_u + old_beta_i) for i in allRatings[:len(train)]]) / len(train)
         beta_u[u] = sum([i - (old_alpha_ + old_beta_i) for i in userRatings[u]]) / (lamda + len(userRatings[u]))
         beta_i[b] = sum([i - (old_alpha_ + old_beta_u) for i in bookRatings[b]]) / (lamda + len(bookRatings[b]))
         predtrain.append(alpha_ + beta_u[u] + beta_i[b])
-    msetrain.append(MSE(predtrain, allRatings[:10000]))
-    if( msetrain[-1] < 4 ) : break
+    msetrain = MSE(predtrain, allRatings[:len(train)])
+    if  abs(msetrain - old_mse) < 0.05 : break
+
+
+
+
+
+
+
+
 
 #Use model for validation set prediction
 
@@ -97,7 +108,8 @@ print("MSE for validation set : " + str(msevalid))
 
 def get_key(val,dict):
     for x,y in dict.items():
-        if y == val: print(x)
+        if y == val:
+            return x
 
 
 print(get_key(max(beta_i.values()),beta_i))
@@ -196,3 +208,6 @@ for l in open("pairs_Rating.txt"):
       with open('Rating_Predictions_updated.csv', 'a') as csvFile:
         writer = csv.writer(csvFile)
         writer.writerow((u+"-"+b,alpha_ + beta_u[u] + beta_i[b]))
+
+
+########################################################
