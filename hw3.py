@@ -4,13 +4,15 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 import csv
+import os
+os.chdir('C:\\Users\\asg007\\PycharmProjects\\CSE')
 
 def readGz(path):
   for l in gzip.open(path, 'rt'):
     yield eval(l)
 
 def readCSV(path):
-  f = gzip.open(path, 'rt')
+  f = gzip.open(path,'rt')
   f.readline()
   for l in f:
     yield l.strip().split(',')
