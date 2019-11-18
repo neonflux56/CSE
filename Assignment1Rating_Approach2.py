@@ -8,6 +8,9 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+
+from Assignment1Rating_Approach1 import bi
+
 os.chdir('C:\\Users\\asg007\\PycharmProjects\\CSE')
 
 def readGz(path):
@@ -149,7 +152,7 @@ def derivative(theta, labels, lamb):
 labels = [d[2] for d in train]
 
 
-C = [0.0001,0.0005,0.001]
+C = [0.0001,0.00009]
 #G = [2,3,4]
 g = 2
 msevalidc = []
@@ -164,17 +167,31 @@ for c in C:
         userGamma[u] = [random.random() * 0.1 - 0.05 for k in range(g)]
     for i in usersperbook:
         bookGamma[i] = [random.random() * 0.1 - 0.05 for k in range(g)]
-    scipy.optimize.fmin_l_bfgs_b(cost, [alpha] + [0.0]*(nUsers+nBooks) + [random.random() * 0.1 - 0.05 for k in range(g*(nUsers+nBooks))] ,derivative, args = (labels, c))
+    scipy.optimize.fmin_l_bfgs_b(cost, [alpha] + [0.0]*(nUsers+nBooks) + [random.random() * 0.1 - 0.05 for k in range(g*(nUsers+nBooks))],derivative, args = (labels, c))
     mse_valid = MSE([prediction(d[0], d[1]) for d in valid], [int(d[2]) for d in valid])
     msevalidc.append(mse_valid)
     print("MSE of validation set = " + str(mse_valid) + " for k value = " + str(g) + " and c value = " + str(c) )
 print("Minimum MSE = " + str( min(msevalidc)))
 plt.plot([str(v) for v in C],msevalidc)
 
+# for g in G:
+
+g=2
+alpha = globaltrainAverage
+userBiases = defaultdict(float)
+bookBiases = defaultdict(float)
+userGamma = {}
+bookGamma = {}
+for u in booksperuser:
+    userGamma[u] = [random.random() * 0.1 - 0.05 for k in range(g)]
+for i in usersperbook:
+    bookGamma[i] = [random.random() * 0.1 - 0.05 for k in range(g)]
+scipy.optimize.fmin_l_bfgs_b(cost, [alpha] + [0.0] * (nUsers + nBooks) + [random.random() * 0.1 - 0.05 for k in range(g * (nUsers + nBooks))], derivative,args=(labels, 0.000016))
+mse_valid = MSE([prediction(d[0], d[1]) for d in valid], [int(d[2]) for d in valid])
+print("MSE of validation set = " + str(mse_valid) + " for k value = " + str(g) + " and c value = " + str(0.000009))
 
 
-#Gradient descent
-scipy.optimize.fmin_l_bfgs_b(cost, [alpha] + [0.0]*(nUsers+nBooks) + [random.random() * 0.1 - 0.05 for k in range(g*(nUsers+nBooks))],derivative, args = (labels, c))
+
 
 #MSE Train
 mse_train = MSE([prediction(d[0], d[1]) for d in train] , labels)
@@ -189,4 +206,16 @@ msevalid = MSE(predvalid,actualvalid)
 print("MSE for validation set : " + str(msevalid))
 
 
+
+predictions = open("predictions_Rating.txt", 'w')
+pred = []
+for l in open("pairs_Rating.txt"):
+    if l.startswith("userID"):
+        predictions.write(l)
+        continue
+    u,b = l.strip().split('-')
+    pred.append(prediction(u,b))
+    _ = predictions.write(u + '-' + b + ',' + str(prediction(u,b)) + '\n')
+print(sum(pred))
+predictions.close()
 

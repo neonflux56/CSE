@@ -210,6 +210,7 @@ for ic, i in mostPopular:
 
 return2 = list(return2)
 pred2 = []
+
 for u,b,_ in new_valid:
   if ((maxsimilarityval(u,b) > 0.0067) and (b in return2)):
     pred2.append(1)
