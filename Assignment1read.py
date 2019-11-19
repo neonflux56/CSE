@@ -11,10 +11,6 @@ from sklearn import linear_model
 import matplotlib.pyplot as plt
 import csv
 
-import os
-os.chdir('C:\\Users\\asg007\\PycharmProjects\\CSE')
-
-
 def readGz(path):
   for l in gzip.open(path, 'rt'):
     yield eval(l)
