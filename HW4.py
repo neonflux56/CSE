@@ -101,4 +101,75 @@ print("MSE of the predictor: " + str(MSE(predictions,Y)))
 #################################################################################
 
 # Question 3
+#Repeat the above experiment using both unigrams and bigrams,
+
+#Define top 500 uniwords
+unigramCount = defaultdict(int)
+totalunigrams = 0
+punct = string.punctuation
+for t in tenk_reviews:
+  t = t.lower() #remove capitalize
+  t = [c for c in t if not (c in punct)]   #remove punctuation
+  t = ''.join(t)  # convert back to string
+  words = t.strip().split()
+  for u in words:
+    totalunigrams += 1
+    unigramCount[u] += 1
+unigram_counts = [(unigramCount[b], b) for b in unigramCount]
+unigram_counts.sort(reverse=True)
+unigrams = [w[1] for w in unigram_counts[:500]]
+unigramId = dict(zip(unigrams, range(len(unigrams))))
+unigramSet = set(unigrams)
+
+#Define top 500 biwords
+bigrams = [w[1] for w in counts[:500]]
+bigramId = dict(zip(bigrams, range(len(bigrams))))
+bigramSet = set(bigrams)
+
+#Run regression
+def feature(t):
+  bigramsoft = []
+  unigramsoft = []
+  feat = [0] * (len(bigramSet)+len(unigramSet))
+  t = t.lower() #remove capitalize
+  t = [c for c in t if not (c in punct)]   #remove punctuation
+  t = ''.join(t)  # convert back to string
+  words = t.strip().split()  # tokenizes
+
+  for w in words:   #Add 500 features for unigrams
+    if not (w in unigramSet): continue
+    feat[unigramId[w]] += 1
+
+  for i,w in enumerate(words):   #Obtain bigrams list
+    if (i<len(words)-1): bigramsoft.append(' '.join(words[i:i+2]))
+    else: continue
+  for b in bigramsoft:    #Add 500 features for bigrams
+    if not (b in bigramSet): continue
+    feat[bigramId[b]] += 1
+
+  feat.append(1)   #Add offset
+  return feat
+
+
+Y = [d['rating'] for d in fulldata[:10000]]
+X = [feature(t) for t in tenk_reviews]
+clf = linear_model.Ridge(1.0, fit_intercept=False) # MSE + 1.0 l2
+clf.fit(X, Y)
+theta = clf.coef_
+predictions = clf.predict(X)
+
+#weights = list(zip(theta, bigrams + ['constant_feat']))
+#weights.sort()
+
+def MSE(predictions, labels):
+  differences = [(x - int(y)) ** 2 for x, y in zip(predictions, labels)]
+  return sum(differences) / len(differences)
+
+print("MSE of the predictor: " + str(MSE(predictions,Y)))
+
+
+
+#################################################################################
+
+# Question 4
 
