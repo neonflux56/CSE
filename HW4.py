@@ -11,6 +11,9 @@ import string
 from nltk.stem.porter import *
 from sklearn import linear_model
 import ast
+import math
+
+
 
 def readGz(path):
   for l in gzip.open(path, 'rt'):
@@ -173,3 +176,102 @@ print("MSE of the predictor: " + str(MSE(predictions,Y)))
 
 # Question 4
 
+req_words = ['stories','magician','psychic','writing','wonder']
+N = len(tenk_reviews)
+
+#IDF
+idf_req_words1 = []
+for w in req_words:
+  df = 0
+  for t in tenk_reviews:
+    t = t.lower()  # remove capitalize
+    t = [c for c in t if not (c in punct)]  # remove punctuation
+    t = ''.join(t)  # convert back to string
+    words = t.strip().split()
+    for w1 in words:
+      if w==w1 :
+        df += 1
+        break
+      else:continue
+    continue
+  idf_req_words1.append(math.log10( N / df ))
+
+#TFIDF
+def tfidf(term,doc,Doc_corpus):
+  df = 0
+  tf = 0
+  for t1 in Doc_corpus:
+    t = t1.lower()  # remove capitalize
+    t = [c for c in t if not (c in punct)]  # remove punctuation
+    t = ''.join(t)  # convert back to string
+    words1 = t.strip().split()
+    for w1 in words1:
+      if w==w1 :
+        df += 1
+        break
+      else:continue
+    continue
+  idf = (math.log10( len(Doc_corpus)*1.0 / df ))
+  doc = doc.lower()
+  doc = [c for c in doc if not (c in punct)]   #remove punctuation
+  doc = ''.join(doc)  # convert back to string
+  words = doc.strip().split()
+  for w1 in words:
+    if term==w1: tf+= 1
+    else: continue
+  return (tf*idf)
+
+
+tfidf_req_words = []
+for i,w in enumerate(req_words):
+  tfidf_req_words.append(tfidf(w,tenk_reviews[0],tenk_reviews))
+
+print("Inverse Doc frequency of the words are: " + str(idf_req_words1))
+print("Tf-idf of the words with respect to first review are: " + str(tfidf_req_words))
+
+#################################################################################
+
+# Question 5
+
+
+# Top 1000 unigrams
+unigrams = [w[1] for w in unigram_counts[:1000]]
+unigramId = dict(zip(unigrams, range(len(unigrams))))
+unigramSet = set(unigrams)
+
+
+#Run regression
+def feature(text):
+  unigramsoft = []
+  feat = [0] * len(unigramSet)
+  t = text.lower() #remove capitalize
+  t = [c for c in t if not (c in punct)]   #remove punctuation
+  t = ''.join(t)  # convert back to string
+  words = t.strip().split()
+  for w in words:   #Add 1000 tfidf features for unigrams
+    if not (w in unigramSet): continue
+    feat[unigramId[w]] = tfidf(w,text,tenk_reviews[:500])
+  feat.append(1)   #Add offset
+  return feat
+
+
+Y = [d['rating'] for d in fulldata[:500]]
+X = [feature(text) for text in tenk_reviews[:500]]
+clf = linear_model.Ridge(1.0, fit_intercept=False) # MSE + 1.0 l2
+clf.fit(X, Y)
+theta = clf.coef_
+predictions = clf.predict(X)
+
+#weights = list(zip(theta, bigrams + ['constant_feat']))
+#weights.sort()
+
+def MSE(predictions, labels):
+  differences = [(x - int(y)) ** 2 for x, y in zip(predictions, labels)]
+  return sum(differences) / len(differences)
+
+print("MSE of the predictor: " + str(MSE(predictions,Y)))
+
+
+#################################################################################
+
+# Question 6
